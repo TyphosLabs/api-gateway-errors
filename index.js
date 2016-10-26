@@ -4,10 +4,14 @@ const Errors = require('super-errors');
 Errors.setFn(lambdaError);
 
 // lambda error handler
-function lambdaError(fn){
+function lambdaError(fn, log){
     return (event, context, callback) => {
         fn(event, context, (err, result) => {
             if(err){
+                if(log !== false){
+                    console.error(err);
+                }
+                
                 if(typeof err !== 'object'){
                     err = new Errors.DevError('Invalid error value.', { err: err });
                     err.safe_message = 'Invalid error value.';
