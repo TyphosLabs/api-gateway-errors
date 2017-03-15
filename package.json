@@ -1,10 +1,11 @@
 {
   "name": "api-gateway-errors",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test/test.js",
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha -- -u exports -R spec"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,14 @@
   },
   "homepage": "https://github.com/TyphosLabs/api-gateway-errors#readme",
   "dependencies": {
-    "super-errors": "0.0.0"
+    "super-errors": "^2.0.0",
+    "super-errors-json": "^1.0.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "dirty-chai": "^1.2.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
+    "rewire": "^2.5.2"
   }
 }

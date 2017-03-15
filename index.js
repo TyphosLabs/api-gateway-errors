@@ -1,54 +1,49 @@
-const Errors = require('super-errors');
+"use strict";
+
+var Errors = require('super-errors-json')(require('super-errors')());
 
 // create an errors fn
 Errors.setFn(lambdaError);
 
-// lambda error handler
-function lambdaError(fn, log){
+/**
+ * Error to return when the error value is not an object
+ */
+function InvalidErrorValue(err_value){
+    this.init(InvalidErrorValue);
+    this.additional = { err:err_value }; 
+}
+Errors.create(InvalidErrorValue, 'Error', 'There was an error.', 500, false);
+
+/**
+ * Wrap all API Gateway lambda handlers with this function.
+ * @param {Function} fn - AWS lambda handler function to wrap.
+ * @param {Object} setting - 
+ * @param {boolean} setting.log - Whether or not to log errors to console.
+ * @returns {Function}
+ */
+function lambdaError(fn, settings){
+    var log = (settings && settings.log === false ? false : true);
+    var map = (settings && settings.map ? settings.map : undefined);
+    var exclude = (settings && settings.exclude ? settings.exclude : undefined);
+    
     return (event, context, callback) => {
         fn(event, context, (err, result) => {
             if(err){
-                if(log !== false){
-                    console.error(err);
+                if(log){
+                    console.error(Errors.stack(err));
                 }
                 
                 if(typeof err !== 'object'){
-                    err = new Errors.DevError('Invalid error value.', { err: err });
-                    err.safe_message = 'Invalid error value.';
+                    console.error('Error must be an object:', err);
+                    err = new InvalidErrorValue(err);
                 }
                 
-                return callback(JSON.stringify(toSafeErrorObject(err)));
+                return callback(Errors.json(err, false, map, exclude));
             }
             
             return callback(null, result);
         });
     };
-}
-
-function safeMessage(err){
-    return err.safe_message || 'There was an error.';
-}
-
-function toSafeErrorObject(err, subfields) {
-    var e = { 
-        message: safeMessage(err), 
-        name: err.name || 'Error',
-        status_code: (typeof err.status_code === 'number' ? err.status_code : 500)
-    };
-    
-    if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
-        e.errors = [];
-        err.errors.forEach(function (err) {
-            e.errors.push(safeMessage(err));
-        });
-    }
-    if (subfields !== false && err.fields && typeof err.fields === 'object'){
-        e.fields = {};
-        for(var field in err.fields){
-            e.fields[field] = safeMessage(err.fields[field], false);
-        }
-    }
-    return e;
 }
 
 // ready to export
